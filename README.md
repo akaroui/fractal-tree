@@ -16,6 +16,11 @@ The details of the algorithm are presented in this [article](http://www.scienced
 * Numpy
 * Scipy
 
+### Install
+```bash
+pip install -e .
+```
+
 You will need .obj mesh file to create the tree. A very nice software to manipulate the mesh and export it to .obj is [MeshLab](http://meshlab.sourceforge.net). Please check if the mesh has duplicated vertex or faces before running the code. Also the orientation of the normals can change your results, because the angles will be flipped. To visualize the output, the best alternative is [Paraview](http://www.paraview.org).
 
 To define the mesh file and the parameters of the tree to use, edit the parameters.py file and then run:
