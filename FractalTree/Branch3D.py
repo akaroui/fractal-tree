@@ -2,6 +2,7 @@
 """
 This module contains the Branch class (one branch of the tree)  and the Nodes class
 """
+import logging
 
 import numpy as np
 from multiprocessing.dummy import Pool as ThreadPool
@@ -217,7 +218,7 @@ class Nodes:
                 np.array([-100000000000.0, -100000000000.0, -100000000000.0])
             ]
             self.nodes_to_consider_keys = [100000000]
-            print("no nodes to consider")
+            log.debug("no nodes to consider")
         self.collision_tree = cKDTree(nodes_to_consider)
 
     def collision(self, point):
@@ -260,3 +261,6 @@ class Nodes:
             ]
         )
         return grad
+
+
+log = logging.getLogger(__name__)

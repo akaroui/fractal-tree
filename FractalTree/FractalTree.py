@@ -4,12 +4,11 @@ This module contains the function that creates the fractal tree.
 """
 import logging
 import sys
-import numpy as np
-
-#   from PlaneParameters import * #Network properties.
-from FractalTree.Branch3D import *
 from random import shuffle
+
+from FractalTree.Branch3D import *
 from FractalTree.Mesh import Mesh
+from tqdm import tqdm
 
 
 def Fractal_Tree_3D(param):

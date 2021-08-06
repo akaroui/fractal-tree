@@ -4,6 +4,7 @@ This module contains the Parameters class that is used to specify the input para
 """
 
 import numpy as np
+import os
 
 
 class Parameters:
