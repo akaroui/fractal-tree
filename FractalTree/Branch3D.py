@@ -80,13 +80,13 @@ class Branch:
             )
             # print 'intriangle',intriangle
             if not intriangle:
-                print("Point not in triangle", i)
+                log.debug(f"Point not in triangle {i}")
                 #                print self.queue[i-1]+dir*l/50.
                 self.growing = False
                 break
             collision = nodes.collision(self.queue[i])
             if collision[1] < l / 5.0:
-                print("Collision", i, collision)
+                log.debug(f"Collision {i} {collision}")
                 self.growing = False
                 self.queue.pop()
                 self.triangles.pop()
@@ -261,6 +261,10 @@ class Nodes:
             ]
         )
         return grad
+
+
+def set_log_level(lvl):
+    log.setLevel(lvl)
 
 
 log = logging.getLogger(__name__)

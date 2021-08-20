@@ -11,7 +11,7 @@ from FractalTree.Mesh import Mesh
 from tqdm import tqdm
 
 
-def Fractal_Tree_3D(param):
+def Fractal_Tree_3D(param, log_level=logging.INFO):
     """This fuction creates the fractal tree.
     Args:
         param (Parameters object): this object contains all the parameters that define the tree. See the parameters module documentation for details:
@@ -20,6 +20,9 @@ def Fractal_Tree_3D(param):
         branches (dict): A dictionary that contains all the branches objects.
         nodes (nodes object): the object that contains all the nodes of the tree.
     """
+    set_log_level(log_level)
+    log.setLevel(log_level)
+
     # Read Mesh
     m = Mesh(param.meshfile)
     # Define the initial direction
@@ -30,12 +33,15 @@ def Fractal_Tree_3D(param):
     # Initialize the nodes object, contains the nodes and all the distance functions
     nodes = Nodes(param.init_node)
     # Project the first node to the mesh.
-    point, tri = m.project_new_point(nodes.nodes[0])
+    init_node = nodes.nodes[0]
+    init_node[2] -= 0.01  # Bug when coord is on a mesh vertex
+    point, tri = m.project_new_point(init_node)
     if tri >= 0:
         init_tri = tri
     else:
         log.error("initial point not in mesh")
         sys.exit(0)
+
     # Initialize the dictionary that stores the branches objects
     branches = {}
     last_branch = 0
@@ -137,14 +143,12 @@ def Fractal_Tree_3D(param):
         branches_to_grow = new_branches_to_grow
 
     if param.save:
+        xyz = np.array(nodes.nodes)
+
         if param.save_paraview:
             from FractalTree.ParaviewWriter import write_line_VTU
 
             log.info("Finished growing, writing paraview file")
-
-            xyz = np.zeros((len(nodes.nodes), 3))
-            for i in range(len(nodes.nodes)):
-                xyz[i, :] = nodes.nodes[i]
             write_line_VTU(xyz, ien, param.filename + ".vtu")
 
         np.savetxt(param.filename + "_ien.txt", ien, fmt="%d")
