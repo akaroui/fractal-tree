@@ -1,8 +1,6 @@
 build/
 dist/
 *.egg-info/
-increaseVersionSetup.py
-makefile
 __pycache__/
 .idea/
 venv
