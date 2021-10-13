@@ -8,7 +8,6 @@ from random import shuffle
 
 from FractalTree.Branch3D import *
 from FractalTree.Mesh import Mesh
-from tqdm import tqdm
 
 
 def Fractal_Tree_3D(param, log_level=logging.INFO):
@@ -96,7 +95,7 @@ def Fractal_Tree_3D(param, log_level=logging.INFO):
                 )
         branches_to_grow = list(range(1, len(param.fascicles_angles) + 1))
 
-    for i in tqdm(range(param.N_it)):
+    for _ in range(param.N_it):
         shuffle(branches_to_grow)
         new_branches_to_grow = []
         for g in branches_to_grow:
