@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-"""
-This module contains the function that creates the fractal tree.
-"""
 import logging
 import sys
 from random import shuffle
 
-from FractalTree.Branch3D import *
+import numpy as np
+
+from FractalTree.Branch3D import set_log_level, Nodes, Branch
 from FractalTree.Mesh import Mesh
 
 
@@ -14,6 +12,7 @@ def Fractal_Tree_3D(param, log_level=logging.INFO):
     """This fuction creates the fractal tree.
     Args:
         param (Parameters object): this object contains all the parameters that define the tree. See the parameters module documentation for details:
+        log_level
 
     Returns:
         branches (dict): A dictionary that contains all the branches objects.
