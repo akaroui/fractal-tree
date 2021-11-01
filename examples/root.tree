@@ -1,0 +1,3 @@
+. out
+	- surf: endocardium.vtk
+	- purk: purkinje_lv.vtk

@@ -16,14 +16,16 @@ def compute_distance(DTYPE_INT a,
                      DTYPE_INT b,
                      np.ndarray[DTYPE_FLOAT, ndim=2] pts,
                      np.ndarray[DTYPE_INT, ndim=2] pap,
+                     np.ndarray[DTYPE_FLOAT, ndim=1] cond,
                      DTYPE_INT n) -> float:
     """
-    Main method to compute the geodesic distance between two vertices
+    Main function to compute the geodesic distance between two vertices
 
     :param a: first vertex
     :param b: second vertex
     :param pts: coordinates of all points in mesh
     :param pap: list of points ids around points padded with -1
+    :param cond: normalized conductivity (defaults to np.ones)
     :param n: number of mesh points
     :return: geodesic distance from a to b
 
@@ -40,18 +42,19 @@ def compute_distance(DTYPE_INT a,
                     _dist = np.array(list(tqdm(pool.imap(geo, range(n)), total=n)))
                 # _dist: geodesic distance for each point from point b=0
     """
-    return geodesic(a, b, pts, pap, n)
+    return geodesic(a, b, pts, pap, cond, n)
 
 
 def compute_distances(DTYPE_INT b,
                       np.ndarray[DTYPE_FLOAT, ndim=2] pts,
                       np.ndarray[DTYPE_INT, ndim=2] pap,
+                      np.ndarray[DTYPE_FLOAT, ndim=1] cond,
                       DTYPE_INT n):
     cdef double[:] dist = np.zeros(n)
     cdef DTYPE_INT i
 
     for i in range(n):
-        dist[i] = geodesic(i, b, pts, pap, n)
+        dist[i] = geodesic(i, b, pts, pap, cond, n)
     return dist
 
 
@@ -61,16 +64,19 @@ cdef DTYPE_FLOAT geodesic(DTYPE_INT a,
                           DTYPE_INT b,
                           double[:, :] pts,
                           long[:, :] pap,
+                          double[:] conductivity,
                           DTYPE_INT n):
     if a == b:
         return 0
 
-    cdef double[:] d = np.zeros(n)
+    cdef double[:] d = np.zeros(n)  # distances
+    cdef double[:] K = conductivity  # normalized conductivity
     cdef long[:] visited = np.zeros(n, dtype=int)
     visited[0] = True
     visited[a] = True
-    cdef DTYPE_FLOAT dmin, dcur
+    cdef DTYPE_FLOAT dmin, dcur, nc
     cdef DTYPE_INT x, y, n_iter = 0
+
 
     cdef cpplist[float] endnodes
     cdef cpplist[int] origins, new_origins
@@ -83,7 +89,8 @@ cdef DTYPE_FLOAT geodesic(DTYPE_INT a,
         for y in origins:
             around = [x for x in pap[y] if x!= -1]
             for x in around:
-                dcur = d[y] + n_(pts[x], pts[y])
+                nc = np.maximum(0.5 * (K[y] + K[x]), 1e-6)  # threshold
+                dcur = d[y] + n_(pts[x], pts[y]) / nc
                 if x == b:
                     endnodes.push_back(dcur)
                 elif not visited[x]:

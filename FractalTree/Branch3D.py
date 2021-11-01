@@ -50,6 +50,7 @@ class Branch:
         nodes,
         brother_nodes,
         Nsegments,
+        fasc_nodes=None,
     ):
         #        self.nnodes=0
         self.child = [0, 0]
@@ -74,6 +75,11 @@ class Branch:
         grad = nodes.gradient(self.queue[0])
         dir = (dir + w * grad) / np.linalg.norm(dir + w * grad)
         #    print nodes.nodes[init_node]+dir*l/Nsegments
+
+        # if fasc_nodes:
+        #     if init_node not in fasc_nodes and self.queue[0][2] > -0.4:
+        #         self.growing = False
+
         for i in range(1, Nsegments):
             intriangle = self.add_node_to_queue(
                 mesh, self.queue[i - 1], dir * l / Nsegments
@@ -85,13 +91,15 @@ class Branch:
                 self.growing = False
                 break
             collision = nodes.collision(self.queue[i])
-            if collision[1] < l / 5.0:
+            if collision[1] < l / 5:
                 log.debug(f"Collision {i} {collision}")
                 self.growing = False
                 self.queue.pop()
                 self.triangles.pop()
-                shared_node = collision[0]
+                if collision[0] not in fasc_nodes:
+                    shared_node = collision[0]
                 break
+
             grad = nodes.gradient(self.queue[i])
             normal = mesh.normals[self.triangles[i], :]
             # Project the gradient to the surface
@@ -99,6 +107,13 @@ class Branch:
             dir = (dir + w * grad) / np.linalg.norm(dir + w * grad)
         nodes_id = nodes.add_nodes(self.queue[1:])
         [self.nodes.append(x) for x in nodes_id]
+
+        if fasc_nodes:
+            if self.nodes[-1] not in fasc_nodes and self.queue[-1][2] > -0.3:
+                self.growing = False
+                self.queue.pop()
+                self.triangles.pop()
+
         if not self.growing:
             nodes.end_nodes.append(self.nodes[-1])
         self.dir = dir

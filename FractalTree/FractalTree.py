@@ -38,7 +38,7 @@ class Curvature:
         cu = (cu - cu.min()) / np.max(cu - cu.min())
 
         cu = tf.beta_(1, 5, cu)  # filtered curvature
-        nmin, nmax = 4, 15
+        nmin, nmax = 3, 5
         cu = (nmax - nmin) * cu + nmin  # mapped to n segments
 
         return cu
@@ -151,6 +151,8 @@ def Fractal_Tree_3D(param, use_curvature=False, log_level=logging.INFO):
                     ]
                 )
         branches_to_grow = list(range(1, len(param.fascicles_angles) + 1))
+        fasc_nodes = brother_nodes
+        # print(fasc_nodes)
 
     for _ in tqdm(range(param.N_it)):
         shuffle(branches_to_grow)
@@ -187,6 +189,7 @@ def Fractal_Tree_3D(param, use_curvature=False, log_level=logging.INFO):
                         param.l_segment,
                         branches[g].queue[-1],
                     ),
+                    fasc_nodes=fasc_nodes,
                 )
                 # Add nodes to IEN
                 for i_n in range(len(branches[last_branch].nodes) - 1):
