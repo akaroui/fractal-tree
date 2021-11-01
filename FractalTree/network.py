@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 class PurkinjeMesh(Mesh):
     @tf.timer
-    def compute_distances(self, idx=0, cond=None):
+    def compute_distances(self, idx=0, cond=None, optimized=True):
         """
         Compute for each point the shortest path from node 0
 
@@ -37,8 +37,19 @@ class PurkinjeMesh(Mesh):
 
         c = tf.none(cond, np.ones(n))
         geo = partial(compute_distance, b=idx, pts=self.pts, pap=pts_a_pts, cond=c, n=n)
+
+        if optimized:
+            to_compute = self.end_nodes
+            m = len(to_compute)
+        else:
+            to_compute = range(n)
+            m = n
+
         with Pool() as pool:
-            _dist = np.array(list(tqdm(pool.imap(geo, range(n)), total=n)))
+            n_dist = np.array(list(tqdm(pool.imap(geo, to_compute), total=m)))
+
+        _dist = np.zeros(n)
+        _dist[to_compute] = n_dist
         return _dist
 
     @tf.timer
@@ -59,6 +70,23 @@ class PurkinjeMesh(Mesh):
         # for i in tqdm(range(self.nbPoints)):
         #     _dist[i] = self.python_geodesic(i, 0)
         return _dist
+
+    @property
+    def end_nodes(self):
+        pcon = self.pointIdsAroundPoint
+        endnodes = []
+        for i, x in enumerate(pcon):
+            if len(x) != 2 and i != 0:
+                endnodes.append(i)
+        return endnodes
+
+    @property
+    def end_nodes_mesh(self):
+        endnodes = self.end_nodes
+        m = PurkinjeMesh.from_elements(self.pts[endnodes])
+        for x in self.pointDataNames:
+            m.addPointData(self.getPointDataArray(x)[endnodes], x)
+        return m
 
 
 def python_geodesic(a, b, pts, pap, n):
@@ -107,7 +135,7 @@ class PurkinjeNetwork:
     created by `FractalTree.generator.PurkinjeGenerator.export_to_vtk`
     """
 
-    def compute_distance(self, name="distances"):
+    def compute_distance(self, name="distances", optimized=True):
         m = self.mesh
 
         # # conductivity
@@ -124,7 +152,7 @@ class PurkinjeNetwork:
         cond = None
 
         # d = m.python_distances()
-        d = m.compute_distances(cond=cond)
+        d = m.compute_distances(cond=cond, optimized=optimized)
         m.addPointData(d, name)
         if m.filename:
             m.write(m.filename)
@@ -230,24 +258,6 @@ class PurkinjeNetwork:
         if inplace:
             self.mesh = mp
         return mp
-
-    @property
-    def end_nodes(self):
-        m = self.mesh
-        pcon = m.pointIdsAroundPoint
-        endnodes = []
-        for i, x in enumerate(pcon):
-            if len(x) != 2 and i != 0:
-                endnodes.append(i)
-        return endnodes
-
-    @property
-    def end_nodes_mesh(self):
-        endnodes = self.end_nodes
-        m = PurkinjeMesh.from_elements(self.mesh.pts[endnodes])
-        for x in self.mesh.pointDataNames:
-            m.addPointData(self.mesh.getPointDataArray(x)[endnodes], x)
-        return m
 
 
 # class Branches(dict):

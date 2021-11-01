@@ -22,11 +22,11 @@ def generate(root):
             "init_length_lv": 1,
             "fascicles_angles_lv": [0],
             "fascicles_length_lv": [0.7],
-            "length_lv": 0.3,
+            "length_lv": 0.5,  # 0.3,
             "min_length_lv": 0.01,
-            "l_segment_lv": 0.1,
-            "N_it_lv": 40,
-            "w_lv": 0.2,
+            "l_segment_lv": 0.2,  # 0.1,
+            "N_it_lv": 20,
+            "w_lv": 0.18,
         },
         use_curvature=True,
     )
@@ -35,7 +35,7 @@ def generate(root):
 def pp(root):
     purk = PurkinjeNetwork(root.purk)
 
-    purk.compute_distance("distances")
+    purk.compute_distance("distances", optimized=True)
     # purk.remove([6,7,8])
     # purk = purk.from_plane(0.75)
 
@@ -55,8 +55,8 @@ def pp(root):
         #     color="red",
         # )
         p.add_mesh(Mesh.load(root.surf), show_edges=True, opacity=0.5)
-        m1 = pyvista.PolyData(purk.end_nodes_mesh.pts)
-        m1["distances"] = purk.end_nodes_mesh.getPointDataArray("distances")
+        m1 = pyvista.PolyData(purk.mesh.end_nodes_mesh.pts)
+        m1["distances"] = purk.mesh.end_nodes_mesh.getPointDataArray("distances")
         p.add_mesh(
             m1,
             render_points_as_spheres=True,
@@ -92,5 +92,5 @@ if __name__ == "__main__":
     _root = tf.Tree.from_file(__file__, "root").dump()
 
     # create_surf(_root.surf)
-    # generate(_root)
+    generate(_root)
     pp(_root)
