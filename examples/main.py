@@ -39,13 +39,13 @@ def pp(root):
     # purk.remove([6,7,8])
     # purk = purk.from_plane(0.75)
 
-    with tf.PvPlot() as p:
+    with tf.PvPlot(title="Purkinje") as p:
         p.add_mesh(
             purk.as_pyvista().tube(radius=0.01),
             # scalars="distances",  # fascicles
             # show_scalar_bar=False,
             # show_edges=True,
-            opacity=0.9,
+            # opacity=0.9,
         )
         # p.add_mesh(purk.mesh, show_edges=True, opacity=0.5)
         # p.add_mesh(
@@ -56,7 +56,7 @@ def pp(root):
         # )
         p.add_mesh(Mesh.load(root.surf), show_edges=True, opacity=0.5)
         m1 = pyvista.PolyData(purk.end_nodes_mesh.pts)
-        m1['distances'] = purk.end_nodes_mesh.getPointDataArray('distances')
+        m1["distances"] = purk.end_nodes_mesh.getPointDataArray("distances")
         p.add_mesh(
             m1,
             render_points_as_spheres=True,
