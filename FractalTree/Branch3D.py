@@ -105,9 +105,9 @@ class Branch:
         # #print self.triangles
         self.tri = self.triangles[-1]
 
-    # Uncomment the following lines for a closed network
-    #   if shared_node is not -1:
-    #      self.nodes.append(shared_node)
+        # Uncomment the following lines for a closed network
+        if shared_node != -1:
+            self.nodes.append(shared_node)
 
     def add_node_to_queue(self, mesh, init_node, dir):
         """Functions that projects a node in the mesh surface and it to the queue is it lies in the surface.

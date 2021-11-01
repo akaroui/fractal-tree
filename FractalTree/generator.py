@@ -3,7 +3,7 @@ from typing import Union
 
 import numpy as np
 import treefiles as tf
-from MeshObject import Mesh, TMeshLoadable
+from MeshObject import Mesh, TMeshLoadable, Object, TMesh
 
 from FractalTree.FractalTree import Fractal_Tree_3D
 from FractalTree.parameters import Parameters
@@ -21,7 +21,7 @@ class PurkinjeGenerator:
         self.params = None
         self.branches = None
         self.nodes = None
-        self.mesh = None
+        self.mesh: TMesh = None
 
     def generate_purkinje(
         self,
@@ -30,25 +30,27 @@ class PurkinjeGenerator:
         pt_start,
         pt_direc,
         cfg,
+        use_curvature=False,
     ):
         """
         High level method to generate the purkinje and onset points, and export them
         """
 
-        def c(x):
+        def c(x, default):
             """
             Return the parameter `x` related to `vent` purkinje generation
             """
-            return cfg[f"{x}_{vent}"]
+            return cfg.get(f"{x}_{vent}", default)
 
         self.select_ventricle(
             vent=vent, endo=endo, pt_start=pt_start, pt_direc=pt_direc
         )
         self.get_params(c)
-        self.generate()
+        self.generate(use_curvature=use_curvature)
         self.export_to_vtk()
-        self.compute_distances()
-        self.compute_fascicles()
+        # self.compute_distances_2()
+        # # self.compute_distances()
+        # self.compute_fascicles()
         self.export_end_nodes()
         self.write()
 
@@ -63,7 +65,7 @@ class PurkinjeGenerator:
 
         # Convert endo to .obj
         self.f_endo = endo
-        Mesh.load(self.f_endo).write(self.root.s, type="obj")
+        Mesh.load(self.f_endo).convertToPolyData().write(self.root.s, type="obj")
 
         self.pt_start = pt_start
         self.pt_direc = pt_direc
@@ -87,21 +89,23 @@ class PurkinjeGenerator:
         param.init_node = self.pt_start
         param.second_node = self.pt_direc
 
-        param.init_length = cfg("his_length")
-        param.length = cfg("length")
-        param.l_segment = cfg("l_segment")
-        param.N_it = cfg("N_it")
-        param.fascicles_angles = cfg("fascicles_angles")
-        param.fascicles_length = cfg("fascicles_length")
-        param.branch_angle = cfg("branch_angle")
+        param.init_length = cfg("his_length", param.init_length)
+        param.length = cfg("length", param.length)
+        param.l_segment = cfg("l_segment", param.l_segment)
+        param.N_it = cfg("N_it", param.N_it)
+        param.fascicles_angles = cfg("fascicles_angles", param.fascicles_angles)
+        param.fascicles_length = cfg("fascicles_length", param.fascicles_length)
+        param.branch_angle = cfg("branch_angle", param.branch_angle)
+        param.w = cfg("w", param.w)
+        param.min_length = cfg("min_length", param.min_length)
 
         self.params = param
         return param
 
-    def generate(self, params: Parameters = None):
+    def generate(self, params: Parameters = None, use_curvature=False):
         if params is None:
             params = self.params
-        self.branches, self.nodes = Fractal_Tree_3D(params)
+        self.branches, self.nodes = Fractal_Tree_3D(params, use_curvature=use_curvature)
 
     def export_to_vtk(self):
         self.check_result(mesh=False)
@@ -119,7 +123,8 @@ class PurkinjeGenerator:
         self.check_result()
 
         xyz = np.array(self.nodes.nodes)
-        d = np.zeros(xyz.shape[0])
+        d = np.ones(xyz.shape[0]) * 1e10
+        d[0] = 0
 
         def dist(dini, a, g):
             return dini + np.linalg.norm(g - a)
@@ -127,10 +132,86 @@ class PurkinjeGenerator:
         for b in self.branches.values():
             idx = b.nodes
             for i in range(1, len(idx)):
-                d[idx[i]] = dist(d[idx[i - 1]], xyz[idx[i - 1]], xyz[idx[i]])
+                d[idx[i]] = min(
+                    dist(d[idx[i - 1]], xyz[idx[i - 1]], xyz[idx[i]]), d[idx[i]]
+                )
 
         self.mesh.addPointData(d, "distances")
         return d
+
+    def compute_distances_2(self):
+        self.check_result()
+
+        pts = np.array(self.nodes.nodes)
+        visited = np.zeros(pts.shape[0], dtype=bool)
+        visited[0] = True
+        to_visit = [1]
+        dist = np.zeros(pts.shape[0])
+        pt_a_pt = self.mesh.pointIdsAroundPoint
+
+        def get_dist(ids_around):
+            v = visited[ids_around]
+            nb_visited = np.count_nonzero(v)
+
+            if nb_visited == 0 or nb_visited > 2:
+                return
+            elif nb_visited == 1:
+                ids_visited = np.array(ids_around)[v]
+                ids_next = np.array(ids_around)[~v]
+                return ids_visited, ids_next
+            elif nb_visited == 2:
+                ids_visited = np.array(ids_around)[v]
+                shor_i = np.argmin((dist[ids_visited[0]], dist[ids_visited[1]]))
+                ids_visited = [shor_i]
+                ids_next = np.array(ids_around)[~v]
+                np.append(ids_next, [int(1 - shor_i)], 0)
+                return ids_visited, ids_next
+            else:
+                raise NotImplementedError
+
+        n = 0
+        while not np.all(visited) and len(to_visit) > 0 and n < 500:
+            n += 1
+            next_visit = []
+            for x in to_visit:
+                # if not visited[x]:
+                r = get_dist(pt_a_pt[x])
+                if r:
+                    _current = x
+                    _visited, _next = r
+                    prv_dist = 1e10 if not visited[x] else dist[_current]
+                    y = dist[_visited] + np.linalg.norm(pts[_current] - pts[_visited])
+                    if y < prv_dist:
+                        if y[0] < 0.2:
+                            print(y)
+                        dist[_current] = y
+                    next_visit.extend(_next)
+                    visited[x] = True
+                    # breakpoint()
+                else:
+                    pass
+            to_visit = next_visit
+        print(n)
+        # breakpoint()
+        self.mesh.addPointData(dist, "distances")
+        return dist
+
+        # xyz = np.array(self.nodes.nodes)
+        # d = np.ones(xyz.shape[0]) * 1e10
+        # d[0] = 0
+        #
+        # def dist(dini, a, g):
+        #     return dini + np.linalg.norm(g - a)
+        #
+        # for b in self.branches.values():
+        #     idx = b.nodes
+        #     for i in range(1, len(idx)):
+        #         d[idx[i]] = min(
+        #             dist(d[idx[i - 1]], xyz[idx[i - 1]], xyz[idx[i]]), d[idx[i]]
+        #         )
+        #
+        # self.mesh.addPointData(d, "distances")
+        # return d
 
     def compute_fascicles(self):
         self.check_result()

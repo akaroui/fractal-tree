@@ -3,16 +3,70 @@ import sys
 from random import shuffle
 
 import numpy as np
+import treefiles as tf
+from MeshObject import Object, TObjectLoadable
+from tqdm import tqdm
 
 from FractalTree.Branch3D import set_log_level, Nodes, Branch
 from FractalTree.Mesh import Mesh
 
 
-def Fractal_Tree_3D(param, log_level=logging.INFO):
+class Curvature:
+    def __init__(self, src: TObjectLoadable, fractal_mesh, cpt: bool):
+        self.active = cpt
+        self.m = Object.load(src, type="obj")
+        self.fm = fractal_mesh
+
+        self.curv = self.compute_curv()
+        self.m.addPointData(self.curv, "n_segments")
+        # self.m.plot(scalars="n_segments")
+
+        self.cells = self.m.cells.as_np()
+        self.pts = self.m.pts
+
+        # self.bench_curv()
+
+    def compute_curv(self):
+        cu = self.m.compute_curvature("curvature")
+        cu = (cu - cu.mean()) / (cu.std())
+        cu = (cu - cu.min()) / np.max(cu - cu.min())
+
+        pi = self.m.pointIdsAroundPoint
+        k = 3
+        for _ in range(k):
+            cu = np.array([np.quantile(cu[pi[i]], 0.8) for i in range(self.m.nbPoints)])
+        cu = (cu - cu.min()) / np.max(cu - cu.min())
+
+        cu = tf.beta_(1, 5, cu)  # filtered curvature
+        nmin, nmax = 4, 15
+        cu = (nmax - nmin) * cu + nmin  # mapped to n segments
+
+        return cu
+
+    def bench_curv(self):
+        cu = self.curv
+        print("min:", cu.min())
+        print("max:", cu.max())
+        print("mean:", cu.mean())
+        print("std:", cu.std())
+        breakpoint()
+
+    def get_nsegments(self, length, l_segment, coord):
+        coord, tri = self.fm.project_new_point(coord)
+        if not self.active or tri == -1:
+            return int(length / l_segment)
+        else:
+            ids = self.cells[tri]
+            # pts = self.pts[ids]  # TODO: barycentric coordinates interpolation
+            return int(np.mean(self.curv[ids]))
+
+
+def Fractal_Tree_3D(param, use_curvature=False, log_level=logging.INFO):
     """This fuction creates the fractal tree.
     Args:
         param (Parameters object): this object contains all the parameters that define the tree. See the parameters module documentation for details:
         log_level
+        use_curvature
 
     Returns:
         branches (dict): A dictionary that contains all the branches objects.
@@ -23,6 +77,10 @@ def Fractal_Tree_3D(param, log_level=logging.INFO):
 
     # Read Mesh
     m = Mesh(param.meshfile)
+
+    # Set up curvature
+    curvature = Curvature(param.meshfile, m, cpt=use_curvature)
+
     # Define the initial direction
     init_dir = (param.second_node - param.init_node) / np.linalg.norm(
         param.second_node - param.init_node
@@ -94,7 +152,7 @@ def Fractal_Tree_3D(param, log_level=logging.INFO):
                 )
         branches_to_grow = list(range(1, len(param.fascicles_angles) + 1))
 
-    for _ in range(param.N_it):
+    for _ in tqdm(range(param.N_it)):
         shuffle(branches_to_grow)
         new_branches_to_grow = []
         for g in branches_to_grow:
@@ -111,6 +169,9 @@ def Fractal_Tree_3D(param, log_level=logging.INFO):
                 l = param.length + np.random.normal(0, param.std_length)
                 if l < param.min_length:
                     l = param.min_length
+
+                # print(branches[g].nodes[-1])
+
                 branches[last_branch] = Branch(
                     m,
                     branches[g].nodes[-1],
@@ -121,7 +182,11 @@ def Fractal_Tree_3D(param, log_level=logging.INFO):
                     param.w,
                     nodes,
                     brother_nodes,
-                    int(param.length / param.l_segment),
+                    curvature.get_nsegments(
+                        param.length,
+                        param.l_segment,
+                        branches[g].queue[-1],
+                    ),
                 )
                 # Add nodes to IEN
                 for i_n in range(len(branches[last_branch].nodes) - 1):

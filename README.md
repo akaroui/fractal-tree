@@ -12,6 +12,7 @@ The details of the algorithm are presented in this [article](http://www.scienced
 
 
 **Pre-requisites:**
+`python setup.py build_ext --inplace`
 
 * Numpy
 * Scipy
