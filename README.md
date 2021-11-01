@@ -1,8 +1,9 @@
-# fractal-tree
+# FractalTree
+
+*Forked from https://github.com/fsahli/fractal-tree*
+
 
 This code is to create a fractal tree over a surface discretized by triangles. It was developed to create a representation of the Purkinje network in the ventricles of the human heart.
-
-Read the documentation in [fractal-tree.readthedocs.org](http://fractal-tree.readthedocs.org/en/latest/). 
 
 The details of the algorithm are presented in this [article](http://www.sciencedirect.com/science/article/pii/S0021929015007332). If you are going to use this code, please cite:
 
@@ -11,15 +12,15 @@ The details of the algorithm are presented in this [article](http://www.scienced
 	Journal of Biomechanics, doi:10.1016/j.jbiomech.2015.12.025
 
 
-**Pre-requisites:**
-`python setup.py build_ext --inplace`
-
-* Numpy
-* Scipy
 
 ### Install
 ```bash
-pip install -e .
+pip install FractalTree
+# or
+git clone https://github.com/GaetanDesrues/fractal-tree FractalTree
+cd FractalTree
+python setup.py build_ext --inplace
+python build_geodesic.py build_ext --inplace
 ```
 
 You will need .obj mesh file to create the tree. A very nice software to manipulate the mesh and export it to .obj is [MeshLab](http://meshlab.sourceforge.net). Please check if the mesh has duplicated vertex or faces before running the code. Also the orientation of the normals can change your results, because the angles will be flipped. To visualize the output, the best alternative is [Paraview](http://www.paraview.org).
@@ -34,5 +35,3 @@ param=Parameters()
 
 branches, nodes = Fractal_Tree_3D(param)
 ```
-
-If you have questions you can contact me at francisco.sahli  at  gmail.com

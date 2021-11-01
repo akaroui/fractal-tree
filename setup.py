@@ -8,7 +8,7 @@ if cython_compile:
 
 setup(
     name="FractalTree",
-    version="0.0.33",
+    version="0.0.34",
     url="https://github.com/GaetanDesrues/fractal-tree",
     packages=["FractalTree"],
 )
