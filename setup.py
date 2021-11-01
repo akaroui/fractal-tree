@@ -1,16 +1,14 @@
-from setuptools import setup, Extension
-from Cython.Build import cythonize
+from setuptools import setup
+
+cython_compile = False
+if cython_compile:
+    from build_geodesic import setup_geo
+
+    setup_geo()
 
 setup(
     name="FractalTree",
     version="0.0.33",
-    # setup_requires=["cython", "numpy"],
-    # install_requires=["numpy"],
-    # ext_modules=cythonize(
-    #     "FractalTree/geodesic_.pyx",
-    #     compiler_directives={"language_level": "3"},
-    # ),
-    # ext_modules=[Extension("geodesic_", ["FractalTree/geodesic_.cpp"])],
     url="https://github.com/GaetanDesrues/fractal-tree",
     packages=["FractalTree"],
 )

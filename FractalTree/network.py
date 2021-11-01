@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 class PurkinjeMesh(Mesh):
     @tf.timer
-    def compute_distances(self):
+    def compute_distances(self, idx=0):
         """
         Compute for each point the shortest path from node 0
 
@@ -35,7 +35,7 @@ class PurkinjeMesh(Mesh):
         for i, x in enumerate(pap):
             pts_a_pts[i][: len(x)] = x
 
-        geo = partial(compute_distance, b=0, pts=self.pts, pap=pts_a_pts, n=n)
+        geo = partial(compute_distance, b=idx, pts=self.pts, pap=pts_a_pts, n=n)
         with Pool() as pool:
             _dist = np.array(list(tqdm(pool.imap(geo, range(n)), total=n)))
         return _dist
