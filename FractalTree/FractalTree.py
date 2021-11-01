@@ -38,7 +38,7 @@ class Curvature:
         cu = (cu - cu.min()) / np.max(cu - cu.min())
 
         cu = tf.beta_(1, 5, cu)  # filtered curvature
-        nmin, nmax = 3, 5
+        nmin, nmax = 3, 10
         cu = (nmax - nmin) * cu + nmin  # mapped to n segments
 
         return cu

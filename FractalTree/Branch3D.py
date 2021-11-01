@@ -109,10 +109,10 @@ class Branch:
         [self.nodes.append(x) for x in nodes_id]
 
         if fasc_nodes:
-            if self.nodes[-1] not in fasc_nodes and self.queue[-1][2] > -0.3:
-                self.growing = False
+            if self.nodes[-1] not in fasc_nodes:  # and self.queue[-1][2] > -0.3
+                # self.growing = False
                 self.queue.pop()
-                self.triangles.pop()
+                # self.triangles.pop()
 
         if not self.growing:
             nodes.end_nodes.append(self.nodes[-1])

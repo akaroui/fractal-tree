@@ -94,6 +94,7 @@ class Mesh:
         # Get triangles connected to that node
         triangles = self.node_to_tri[node]
         if len(triangles) == 0:
+            # breakpoint()
             raise Exception("node not connected to triangles, check your mesh")
         # print triangles
         # Compute the vertex normal as the avergage of the triangle normals.

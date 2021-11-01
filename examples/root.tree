@@ -1,3 +1,6 @@
 . out
-	- surf: endocardium.vtk
-	- purk: purkinje_lv.vtk
+	- purk: purkinje_rv.vtk
+#	- surf: endocardium.vtk
+	- surf: surf_rv.vtk
+#	- surf: surf_rv.vtk
+	- endp: purkinje_rv_endp.vtk

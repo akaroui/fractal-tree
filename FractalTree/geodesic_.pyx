@@ -104,6 +104,9 @@ cdef DTYPE_FLOAT geodesic(DTYPE_INT a,
 
         origins = new_origins
 
+    if endnodes.size() == 0:
+        return -1.
+
     return np.min(endnodes)
 
 
