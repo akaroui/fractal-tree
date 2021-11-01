@@ -3,7 +3,7 @@ from Cython.Build import cythonize
 
 setup(
     name="FractalTree",
-    version="0.0.32",
+    version="0.0.33",
     # setup_requires=["cython", "numpy"],
     # install_requires=["numpy"],
     # ext_modules=cythonize(
