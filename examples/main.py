@@ -84,13 +84,20 @@ def generate(root):
 
 def pp(root):
     purk = PurkinjeNetwork.load(root.purk)
-    rmed = purk.pts[range(800, 900)]
-    purk = purk.remove(range(800, 900), inplace=False)
+    # rmed = purk.pts[range(800, 900)]
+    # purk = purk.remove(range(800, 900), inplace=False)
 
     # nbv = purk.mesh.prune_close_points(th=3)
     # purk.remove(nbv)
+    # d = purk.compute_distance("distances", optimized=False)
+
+    th = purk.bounds[4] + 0.8 * (purk.bounds[5] - purk.bounds[4])
+    purk = purk.remove(np.where(purk.pts[:, 2] > th), inplace=False)
+
+    d = purk.compute_geodesic(optimized=False)
+    # print(d.shape)
     # breakpoint()
-    d = purk.compute_distance("distances", optimized=False)
+
     mask = np.where(d == -1)
     rmed2 = purk.pts[mask]
     purk = purk.remove(mask, inplace=False)

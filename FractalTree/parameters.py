@@ -44,11 +44,11 @@ class Parameters:
         # Median length of the branches
         self.length = 0.1
         # Standard deviation of the length
-        self.std_length = np.sqrt(0.2) * self.length
+        self.std_length = 0  # np.sqrt(0.2) * self.length
         # Min length to avoid negative length
         self.min_length = self.length / 10.0
         self.branch_angle = 0.15
-        self.w = 0.1
+        self.w = 0.2
         # Length of the segments (approximately, because the lenght of the branch is random)
         self.l_segment = 0.01
 

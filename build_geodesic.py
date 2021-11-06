@@ -1,3 +1,5 @@
+import sys
+
 from setuptools import setup
 from Cython.Build import cythonize
 
@@ -17,4 +19,7 @@ def setup_geo():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        sys.argv.extend(("build_ext", "--inplace"))
+
     setup_geo()

@@ -42,6 +42,27 @@ class PurkinjeNetwork(Mesh):
         return d
 
     @tf.timer
+    def compute_geodesic(self, name="distances", b=0, cond=None, optimized=True):
+        """
+        C++ + prange parallelism. Best option so far
+        Compute for each point the shortest path from node 0
+        """
+        from FractalTree.core.rect import geodesic_distance
+
+        n = self.nbPoints
+        pap = self.pointIdsAroundPoint
+        c = tf.none(cond, np.ones(n))
+        to_compute = self.end_nodes if optimized else range(n)
+
+        log.info(f"Starting to compute geodesic distance")
+        d = geodesic_distance(idx=to_compute, b=b, n=n, pts=self.pts, pap=pap, cond=c)
+
+        self.addPointData(d, "distances")
+        if self.filename:
+            self.write(self.filename)
+        return d
+
+    @tf.timer
     def compute_distances(self, idx=0, cond=None, optimized=True):
         """
         Compute for each point the shortest path from node 0
