@@ -21,6 +21,7 @@ class Parameters:
         std_length (float): standard deviation of the length. Set to zero to avoid random lengths.
         min_length (float): minimum length of the branches. To avoid randomly generated negative lengths.
         branch_angle (float): angle with respect to the direction of the previous branch and the new branch.
+        # std_angle (float): standard deviation of the branch angle. Set to zero to avoid random lengths.
         w (float): repulsivity parameter.
         l_segment (float): length of the segments that compose one branch (approximately, because the lenght of the branch is random). It can be interpreted as the element length in a finite element mesh.
         Fascicles (bool): include one or more straigth branches with different lengths and angles from the initial branch. It is motivated by the fascicles of the left ventricle.
@@ -48,6 +49,7 @@ class Parameters:
         # Min length to avoid negative length
         self.min_length = self.length / 10.0
         self.branch_angle = 0.15
+        # self.std_angle = 0
         self.w = 0.2
         # Length of the segments (approximately, because the lenght of the branch is random)
         self.l_segment = 0.01
@@ -74,6 +76,7 @@ class Parameters:
             f"std_length: {self.std_length}\n"
             f"min_length: {self.min_length}\n"
             f"branch_angle: {self.branch_angle}\n"
+            # f"std_angle: {self.std_angle}\n"
             f"w: {self.w}\n"
             f"l_segment: {self.l_segment}\n"
             f"Fascicles: {self.Fascicles}\n"

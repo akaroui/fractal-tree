@@ -15,33 +15,51 @@ class Curvature:
     def __init__(self, src: TObjectLoadable, fractal_mesh, cpt: bool):
         self.active = cpt
         self.m = Object.load(src, type="obj")
+        self.m.convertToPolyData()
+        self.m.filterCellsTo(Object.TRIANGLE)
+        self.m.clean()
         self.fm = fractal_mesh
 
-        self.curv = self.compute_curv()
-        self.m.addPointData(self.curv, "n_segments")
-        # self.m.plot(scalars="n_segments")
-
+        self.curv = None
+        self.n_segments = None
         self.cells = self.m.cells.as_np()
         self.pts = self.m.pts
 
         # self.bench_curv()
 
+    def remesh(self):
+        sol = 1 - self.curv
+        sol = tf.beta_(3, 1, sol)  # filtered curvature
+        lmin, lmax = 0.5, 3  # mm
+        sol = (1 - sol) * lmin + sol * lmax
+        # self.m.addPointData(sol, "curvature")
+        self.m.remesh(sol=sol, mmg_opt=self.m.mmg_options())
+        self.m.convertToPolyData()
+        self.m.smooth()
+        # self.m.plot(show_edges=True)  # , scalars="curvature")
+        self.m.write(type="obj")
+
     def compute_curv(self):
         cu = self.m.compute_curvature("curvature")
+        cu = np.abs(cu)
         cu = (cu - cu.mean()) / (cu.std())
         cu = (cu - cu.min()) / np.max(cu - cu.min())
 
         pi = self.m.pointIdsAroundPoint
-        k = 3
+        k = 5
         for _ in range(k):
             cu = np.array([np.quantile(cu[pi[i]], 0.8) for i in range(self.m.nbPoints)])
         cu = (cu - cu.min()) / np.max(cu - cu.min())
 
-        cu = tf.beta_(1, 5, cu)  # filtered curvature
-        nmin, nmax = 3, 10
-        cu = (nmax - nmin) * cu + nmin  # mapped to n segments
+        self.curv = cu
 
-        return cu
+        cu = tf.beta_(1, 5, cu)  # filtered curvature
+        nmin, nmax = 3, 15
+        cu = (nmax - nmin) * cu + nmin  # mapped to n segments
+        self.n_segments = cu
+
+        self.m.addPointData(self.n_segments, "n_segments")
+        # self.m.plot(scalars="n_segments")
 
     def bench_curv(self):
         cu = self.curv
@@ -58,7 +76,7 @@ class Curvature:
         else:
             ids = self.cells[tri]
             # pts = self.pts[ids]  # TODO: barycentric coordinates interpolation
-            return int(np.mean(self.curv[ids]))
+            return int(np.mean(self.n_segments[ids]))
 
 
 def Fractal_Tree_3D(param, use_curvature=False, log_level=logging.INFO):
@@ -80,6 +98,10 @@ def Fractal_Tree_3D(param, use_curvature=False, log_level=logging.INFO):
 
     # Set up curvature
     curvature = Curvature(param.meshfile, m, cpt=use_curvature)
+    if use_curvature:
+        curvature.compute_curv()
+        curvature.remesh()
+        m = Mesh(param.meshfile)
 
     # Define the initial direction
     init_dir = (param.second_node - param.init_node) / np.linalg.norm(
@@ -90,12 +112,12 @@ def Fractal_Tree_3D(param, use_curvature=False, log_level=logging.INFO):
     nodes = Nodes(param.init_node)
     # Project the first node to the mesh.
     init_node = nodes.nodes[0]
-    init_node[2] -= 0.01  # Bug when coord is on a mesh vertex
+    init_node[2] -= 0.5  # Bug when coord is on a mesh vertex
     point, tri = m.project_new_point(init_node)
     if tri >= 0:
         init_tri = tri
     else:
-        log.error("initial point not in mesh")
+        log.error("initial point not in mesh, maybe 'Bug when coord is on a mesh vertex'")
         sys.exit(0)
 
     # Initialize the dictionary that stores the branches objects
@@ -154,11 +176,13 @@ def Fractal_Tree_3D(param, use_curvature=False, log_level=logging.INFO):
         fasc_nodes = brother_nodes
         # print(fasc_nodes)
 
-    for _ in tqdm(range(param.N_it)):
+    # breakpoint()
+
+    for _ in range(param.N_it):  # tqdm
         shuffle(branches_to_grow)
         new_branches_to_grow = []
         for g in branches_to_grow:
-            angle = -param.branch_angle * np.random.choice([-1, 1])
+            angle = -param.branch_angle  # * np.random.choice([-1, 1])
             for j in range(2):
                 brother_nodes = []
                 brother_nodes += branches[g].nodes
@@ -173,6 +197,8 @@ def Fractal_Tree_3D(param, use_curvature=False, log_level=logging.INFO):
                     l = param.min_length
 
                 # print(branches[g].nodes[-1])
+                # if len(branches[g].queue) > 0:
+                #     breakpoint()
 
                 branches[last_branch] = Branch(
                     m,

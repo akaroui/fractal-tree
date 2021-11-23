@@ -40,7 +40,11 @@ class PurkinjeGenerator:
             """
             Return the parameter `x` related to `vent` purkinje generation
             """
-            return cfg.get(f"{x}_{vent}", default)
+            k = f"{x}_{vent}"
+            if k in cfg:
+                return cfg[k].value
+            else:
+                return default
 
         self.select_ventricle(
             vent=vent, endo=endo, pt_start=pt_start, pt_direc=pt_direc
@@ -108,7 +112,8 @@ class PurkinjeGenerator:
 
     def generate(self, use_curvature=False):
         self.branches, self.nodes = Fractal_Tree_3D(
-            self.params, use_curvature=use_curvature
+            self.params,
+            use_curvature=use_curvature,  # log_level=logging.DEBUG
         )
 
     def export_to_vtk(self):
