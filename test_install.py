@@ -3,12 +3,12 @@ import logging
 import treefiles as tf
 from MeshObject import Mesh
 
-from FractalTree.network import PurkinjeMesh
+from FractalTree.network import PurkinjeNetwork
 
 
 def main():
     m = Mesh.Sphere(theta_res=5, phi_res=5)
-    m = PurkinjeMesh(m.data)
+    m = PurkinjeNetwork(m.data)
     d = m.compute_distances()
     m.addPointData(d, "distances")
     m.plot(scalars="distances")

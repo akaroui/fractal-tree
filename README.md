@@ -18,9 +18,17 @@ The details of the algorithm are presented in this [article](http://www.scienced
 pip install FractalTree
 # or
 git clone https://github.com/GaetanDesrues/fractal-tree FractalTree
-cd FractalTree
+cd FractalTree/FractalTree/core
 python setup.py build_ext --inplace
-python build_geodesic.py build_ext --inplace
+
+#You may have to add this line to Cython/Includes/libcpp/algorithm.pxd:
+Iter min_element[Iter](Iter first, Iter last) except +
+
+# Test
+python test_install.py
+
+#python setup.py build_ext --inplace
+#python build_geodesic.py build_ext --inplace
 ```
 
 ![](src/purk.png)
