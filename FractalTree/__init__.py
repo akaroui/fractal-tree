@@ -5,5 +5,5 @@ def install():
     import treefiles as tf
 
     subprocess.call(
-        [sys.executable, tf.f(__file__) / "../build_geodesic.py", "build_ext", "--inplace"]
+        [sys.executable, tf.f(__file__) / "build_geodesic.py", "build_ext", "--inplace"]
     )
