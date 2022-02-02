@@ -10,6 +10,4 @@ def install():
     if len(sys.argv) == 1:
         sys.argv.extend(("build_ext", "--inplace"))
 
-    # python setup.py build_ext --inplace
-
-    setup(ext_modules=cythonize(["core/rect.pyx"]))
+    setup(ext_modules=cythonize(["FractalTree/core/rect.pyx"]))
