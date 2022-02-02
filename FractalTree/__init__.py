@@ -12,4 +12,4 @@ def install():
 
     # python setup.py build_ext --inplace
 
-    setup(ext_modules=cythonize("core/rect.pyx"))
+    setup(ext_modules=cythonize(["core/rect.pyx"]))
