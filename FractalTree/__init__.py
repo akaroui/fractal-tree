@@ -1,15 +1,15 @@
+import sys
 
 
 def install():
     """Deal with compilation after install with pip"""
 
-    from Cython.Build import cythonize
     from setuptools import setup
+    from Cython.Build import cythonize
 
+    if len(sys.argv) == 1:
+        sys.argv.extend(("build_ext", "--inplace"))
 
-    setup(
-        ext_modules=cythonize(
-            "core/rect.pyx",
-            compiler_directives={"language_level": "3"},
-        ),
-    )
+    # python setup.py build_ext --inplace
+
+    setup(ext_modules=cythonize("rect.pyx"))
