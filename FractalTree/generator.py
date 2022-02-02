@@ -42,7 +42,10 @@ class PurkinjeGenerator:
             """
             k = f"{x}_{vent}"
             if k in cfg:
-                return cfg[k].value
+                if isinstance(cfg[k], tf.BaseIO):
+                    return cfg[k].value
+                else:
+                    return cfg[k]
             else:
                 return default
 

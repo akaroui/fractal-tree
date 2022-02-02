@@ -15,6 +15,27 @@ class PurkinjeNetwork(Mesh):
     created by `FractalTree.generator.PurkinjeGenerator.export_to_vtk`
     """
 
+    @tf.timer
+    def compute_geodesic(self, name="distances", b=0, cond=None, optimized=True):
+        """
+        C++ + prange parallelism. Best option so far
+        Compute for each point the shortest path from node b=0
+        """
+        from rect import geodesic_distance
+
+        n = self.nbPoints
+        pap = self.pointIdsAroundPoint
+        c = tf.none(cond, np.ones(n))
+        to_compute = self.end_nodes if optimized else range(n)
+
+        log.info(f"Starting to compute geodesic distance")
+        d = geodesic_distance(idx=to_compute, b=b, n=n, pts=self.pts, pap=pap, cond=c)
+
+        self.addPointData(d, name)
+        if self.filename:
+            self.write(self.filename)
+        return d
+
     def compute_distance(self, name="distances", optimized=True):
         """
         Main method to compute geodesic distances on network
@@ -41,95 +62,74 @@ class PurkinjeNetwork(Mesh):
             self.write(self.filename)
         return d
 
-    @tf.timer
-    def compute_geodesic(self, name="distances", b=0, cond=None, optimized=True):
-        """
-        C++ + prange parallelism. Best option so far
-        Compute for each point the shortest path from node b=0
-        """
-        from FractalTree.core.rect import geodesic_distance
+    # @tf.timer
+    # def compute_distances(self, idx=0, cond=None, optimized=True):
+    #     """
+    #     Compute for each point the shortest path from node 0
+    #
+    #     ,cpu,pts,time_s
+    #     default,7706,19.1
+    #     default,8304,21.3
+    #     default,9714,28.0
+    #     1/2,8898,25.3
+    #     1,9523,26.9
+    #     2,9626,32.2
+    #     3,7894,20.0
+    #     4,9861,33.6
+    #     """
+    #     from geodesic_ import compute_distance
+    #
+    #     n = self.nbPoints
+    #     pap = self.pointIdsAroundPoint
+    #     shape = (n, len(max(pap, key=lambda x: len(x))))
+    #     pts_a_pts = np.ones(shape, dtype=int) * -1
+    #     for i, x in enumerate(pap):
+    #         pts_a_pts[i][: len(x)] = x
+    #
+    #     c = tf.none(cond, np.ones(n))
+    #     geo = partial(compute_distance, b=idx, pts=self.pts, pap=pts_a_pts, cond=c, n=n)
+    #
+    #     if optimized:
+    #         to_compute = self.end_nodes
+    #         m = len(to_compute)
+    #     else:
+    #         to_compute = range(n)
+    #         m = n
+    #
+    #     with Pool() as pool:
+    #         n_dist = np.array(list(tqdm(pool.imap(geo, to_compute), total=m)))
+    #
+    #     _dist = np.zeros(n)
+    #     _dist[to_compute] = n_dist
+    #     return _dist
 
-        n = self.nbPoints
-        pap = self.pointIdsAroundPoint
-        c = tf.none(cond, np.ones(n))
-        to_compute = self.end_nodes if optimized else range(n)
-
-        log.info(f"Starting to compute geodesic distance")
-        d = geodesic_distance(idx=to_compute, b=b, n=n, pts=self.pts, pap=pap, cond=c)
-
-        self.addPointData(d, "distances")
-        if self.filename:
-            self.write(self.filename)
-        return d
-
-    @tf.timer
-    def compute_distances(self, idx=0, cond=None, optimized=True):
-        """
-        Compute for each point the shortest path from node 0
-
-        ,cpu,pts,time_s
-        default,7706,19.1
-        default,8304,21.3
-        default,9714,28.0
-        1/2,8898,25.3
-        1,9523,26.9
-        2,9626,32.2
-        3,7894,20.0
-        4,9861,33.6
-        """
-        from geodesic_ import compute_distance
-
-        n = self.nbPoints
-        pap = self.pointIdsAroundPoint
-        shape = (n, len(max(pap, key=lambda x: len(x))))
-        pts_a_pts = np.ones(shape, dtype=int) * -1
-        for i, x in enumerate(pap):
-            pts_a_pts[i][: len(x)] = x
-
-        c = tf.none(cond, np.ones(n))
-        geo = partial(compute_distance, b=idx, pts=self.pts, pap=pts_a_pts, cond=c, n=n)
-
-        if optimized:
-            to_compute = self.end_nodes
-            m = len(to_compute)
-        else:
-            to_compute = range(n)
-            m = n
-
-        with Pool() as pool:
-            n_dist = np.array(list(tqdm(pool.imap(geo, to_compute), total=m)))
-
-        _dist = np.zeros(n)
-        _dist[to_compute] = n_dist
-        return _dist
-
-    @tf.timer
-    def python_distances(self):
-        """
-        Python version of `PurkinjeNetwork.compute_distances`
-
-        Ex (compute purk network distances on 1449 pts):
-        sequential: 28.7s
-        parallel: 8.3s
-        parallel (cython): 2.5s
-        """
-        n = self.nbPoints
-
-        # Parallel
-        geo = partial(
-            python_geodesic, b=0, pts=self.pts, pap=self.pointIdsAroundPoint, n=n
-        )
-        with Pool() as pool:
-            _dist = np.array(list(tqdm(pool.imap(geo, range(n)), total=n)))
-
-        # # Sequential
-        # _dist = np.zeros(n)
-        # for i in tqdm(range(self.nbPoints)):
-        #     _dist[i] = python_geodesic(
-        #         i, 0, pts=self.pts, pap=self.pointIdsAroundPoint, n=n
-        #     )
-
-        return _dist
+    # @tf.timer
+    # def python_distances(self):
+    #     """
+    #     Python version of `PurkinjeNetwork.compute_distances`
+    #
+    #     Ex (compute purk network distances on 1449 pts):
+    #     sequential: 28.7s
+    #     parallel: 8.3s
+    #     parallel (cython): 2.5s
+    #     """
+    #     n = self.nbPoints
+    #
+    #     # Parallel
+    #     geo = partial(
+    #         python_geodesic, b=0, pts=self.pts, pap=self.pointIdsAroundPoint, n=n
+    #     )
+    #     with Pool() as pool:
+    #         _dist = np.array(list(tqdm(pool.imap(geo, range(n)), total=n)))
+    #
+    #     # # Sequential
+    #     # _dist = np.zeros(n)
+    #     # for i in tqdm(range(self.nbPoints)):
+    #     #     _dist[i] = python_geodesic(
+    #     #         i, 0, pts=self.pts, pap=self.pointIdsAroundPoint, n=n
+    #     #     )
+    #
+    #     return _dist
 
     @property
     def end_nodes(self):
