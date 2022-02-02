@@ -1,0 +1,3 @@
+include FractalTree/core/cla.h
+include FractalTree/core/cla.pxd
+include FractalTree/core/rect.pyx
