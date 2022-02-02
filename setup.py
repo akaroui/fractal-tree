@@ -1,6 +1,6 @@
 from setuptools import setup
 
-cython_compile = False
+cython_compile = True
 if cython_compile:
     from build_geodesic import setup_geo
 
