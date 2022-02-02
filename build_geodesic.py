@@ -12,7 +12,7 @@ def setup_geo():
         setup_requires=["cython", "numpy"],
         install_requires=["numpy"],
         ext_modules=cythonize(
-            "FractalTree/geodesic_.pyx",
+            "FractalTree/core/rect.pyx",
             compiler_directives={"language_level": "3"},
         ),
     )
