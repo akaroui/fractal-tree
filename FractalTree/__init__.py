@@ -9,7 +9,7 @@ def install():
 
     setup(
         ext_modules=cythonize(
-            "FractalTree/core/rect.pyx",
+            "core/rect.pyx",
             compiler_directives={"language_level": "3"},
         ),
     )
