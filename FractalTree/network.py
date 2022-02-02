@@ -21,7 +21,7 @@ class PurkinjeNetwork(Mesh):
         C++ + prange parallelism. Best option so far
         Compute for each point the shortest path from node b=0
         """
-        from rect import geodesic_distance
+        from FractalTree.core.rect import geodesic_distance
 
         n = self.nbPoints
         pap = self.pointIdsAroundPoint
