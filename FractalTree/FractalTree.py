@@ -40,7 +40,7 @@ class Curvature:
         self.m.write(type="obj")
 
     def compute_curv(self):
-        cu = self.m.compute_curvature("curvature")
+        cu = self.m.compute_curvature("curvature", method='mean')
         cu = np.abs(cu)
         cu = (cu - cu.mean()) / (cu.std())
         cu = (cu - cu.min()) / np.max(cu - cu.min())
